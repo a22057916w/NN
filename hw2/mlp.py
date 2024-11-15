@@ -8,7 +8,10 @@ def relu_derivative(x):
     return (x > 0).astype(float)
 
 def softmax(x):
-    exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+    x = np.nan_to_num(x, nan=0.0, posinf=1e10, neginf=-1e10)  # Clean invalid values from input
+    max_x = np.max(x, axis=1, keepdims=True)
+    exp_x = np.exp(x - max_x)
+    exp_x = np.maximum(exp_x, 1e-10)  # Clip values to avoid overflow or underflow
     return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
 # 損失函數
@@ -32,6 +35,8 @@ class Layer:
     def forward(self, x):
         # 前向傳播
         self.input = x
+        # Min-Max Normalization before applying weights
+        self.input = (self.input - np.min(self.input)) / (np.max(self.input) - np.min(self.input) + 1e-10)
         self.z = np.dot(x, self.weights) + self.biases
         self.a = self.activation(self.z)
         return self.a
