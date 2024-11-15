@@ -48,7 +48,7 @@ network.add_layer(Layer(input_size=10, output_size=num_classes, activation=softm
 network.train(train_features, train_labels, val_features, val_labels, learning_rate=0.01, epochs=1000, momentum=0.9)
 
 # Plotting accuracy vs epoch and loss vs epoch
-epochs = range(1, 801)
+epochs = range(1, 1001)
 
 plt.figure(figsize=(14, 6))
 
