@@ -15,12 +15,10 @@ def load_cancer_data(fp):
 if __name__ == "__main__":
     features, labels, diagnosis_to_label, feature_names = load_cancer_data('breast_cancer.csv')
 
-    # plot_feature_scatter(features, labels, diagnosis_to_label, feature_names)
+    plot_feature_scatter(features, labels, diagnosis_to_label, feature_names)
 
     num_classes = len(diagnosis_to_label)
     labels_one_hot = one_hot_encoding(labels, num_classes)
-
-
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, labels_one_hot) 
 
 
