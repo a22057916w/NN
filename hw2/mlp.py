@@ -108,14 +108,13 @@ class Network:
 
 
     def backward(self, y_pred, y_true, learning_rate, momentum):
-        # 反向傳播
-        dJ = y_pred - y_true  # 輸出層的梯度
+        dJ = y_pred - y_true  # Gradients of Output Layer
         for layer in reversed(self.layers):
             dJ = layer.backward(dJ, learning_rate, momentum)
 
 
     def train(self, x, y_true, val_x, val_y, learning_rate=0.05, epochs=100, momentum=0.9, loss_type="categorical_cross_entropy"):
-        # 訓練過程
+        # Train process
         for epoch in range(epochs):
             # Training pass
             y_pred = self.forward(x)
@@ -128,7 +127,7 @@ class Network:
             val_loss = self.compute_loss(val_pred, val_y, loss_type)
             val_accuracy = self.evaluate(val_x, val_y)
 
-            # 記錄訓練和驗證數據
+            # Record training history
             self.history["train_accuracy"].append(train_accuracy)
             self.history["train_loss"].append(train_loss)
             self.history["val_accuracy"].append(val_accuracy)
@@ -138,12 +137,11 @@ class Network:
                   f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy * 100:.2f}%")
 
     def predict(self, x):
-        # 使用前向傳播進行預測
         predictions = self.forward(x)
         return np.argmax(predictions, axis=1)
 
+
     def evaluate(self, x, y_true):
-        # 計算準確率
         y_pred = self.predict(x)
         true_labels = np.argmax(y_true, axis=1)
         accuracy = np.mean(y_pred == true_labels)
