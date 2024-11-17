@@ -29,8 +29,9 @@ if __name__ == "__main__":
     network.add_layer(Layer(input_size=10, output_size=10, activation=relu))
     network.add_layer(Layer(input_size=10, output_size=num_cls, activation=softmax))
 
-    eps = 1000
-    network.train(X_train, y_train, X_val, y_val, learning_rate=0.01, epochs=eps, momentum=0.9, loss_type="categorical_cross_entropy")
+    eps = 2000
+    network.train(X_train, y_train, X_val, y_val, learning_rate=0.01, epochs=eps, momentum=0.3, loss_type="categorical_cross_entropy")
     
     # plot accuracy and loss
     plot_training_results(network.history, eps, save_dir="result/breast_cacner/metric")
+    print(f"Test Accuracy: {network.evaluate(X_test, y_test)}")
