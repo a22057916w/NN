@@ -5,7 +5,8 @@ import os
 
 
 def split_data(features, labels, train_rt=0.6, val_rt=0.2, test_rt=0.2, random_state=42, shuffle=True):
-    indices = np.arange(features.shape[0])
+    # assign indices to feature samples
+    indices = np.arange(features.shape[0])     
 
     if shuffle:
         np.random.seed(random_state)
@@ -31,10 +32,20 @@ def one_hot_encoding(labels, cls_num):
     return one_hot
 
 
-def plot_feature_scatter(features, labels, feature_to_label, feature_names):
-    feature_indices = list(combinations(range(features.shape[1]), 2))  # Get all combinations of two features
-    save_dir = 'feature_scatter_plots'
+def plot_feature_scatter(features, labels, feature_to_label, feature_names, save_dir):
+    """
+    Plot scatter plots of features against each other.
+
+    Parameters:
+    features (ndarray): 2D array containing feature values of shape (n_samples, n_features).
+    labels (ndarray): 1D array containing the labels for each sample.
+    feature_to_label (dict): A dictionary mapping label indices to label names.
+    feature_names (list): A list of feature names corresponding to the features array.
+    save_dir (str): Directory to save the plots.
+    """
     os.makedirs(save_dir, exist_ok=True)
+
+    feature_indices = list(combinations(range(features.shape[1]), 2))  # Get all combinations of two features
     
     count = 1
     for i in range(0, len(feature_indices), 6):
@@ -54,6 +65,46 @@ def plot_feature_scatter(features, labels, feature_to_label, feature_names):
             plt.legend()
 
         plt.tight_layout()
-        plt.savefig(os.path.join(save_dir, f'feature_scatter_{count}.png'))
+        plt.savefig(os.path.join(save_dir, f'feat_to_feat({count}).png'))
         count += 1
         plt.close()
+
+
+def plot_training_results(history, epochs, save_dir, figsize=(14, 6)):
+    """
+    Plot training "accuracy vs epoch" and "loss vs epoch".
+
+    Parameters:
+    history (dict): A dictionary containing 'train_accuracy', 'val_accuracy', 'train_loss', and 'val_loss'.
+    epochs (int): Number of epochs used during training.
+    save_path (str): Directory to save the plot.
+    figsize (tuple): Size of the plot figure. Default is (14, 6).
+    """
+    os.makedirs(save_dir, exist_ok=True)
+    
+    epoch_range = range(1, epochs + 1)
+    
+    plt.figure(figsize=figsize)
+
+    # Plot accuracy
+    plt.subplot(1, 2, 1)
+    plt.plot(epoch_range, history["train_accuracy"], label="Training Accuracy")
+    plt.plot(epoch_range, history["val_accuracy"], label="Validation Accuracy", linestyle="--")
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
+    plt.title("Accuracy vs Epoch")
+    plt.legend()
+
+    # Plot loss
+    plt.subplot(1, 2, 2)
+    plt.plot(epoch_range, history["train_loss"], label="Training Loss")
+    plt.plot(epoch_range, history["val_loss"], label="Validation Loss", linestyle="--", color="orange")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title("Loss vs Epoch")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"metrics.png"))
+    plt.show()
+    
