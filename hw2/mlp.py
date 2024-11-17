@@ -26,6 +26,12 @@ def softmax(x):
 def min_max_norm(array, epsilon=1e-10):
     return (array - np.min(array)) / (np.max(array) - np.min(array) + epsilon)
 
+def mean_norm(array, epsilon=1e-10):
+    return (array - np.mean(array)) / (np.max(array) - np.min(array) + epsilon)
+
+def standardize(array, epsilon=1e-10):
+    return (array - np.mean(array)) / (np.std(array) + epsilon)
+
 
 # Loss Function
 def categorical_cross_entropy(y_pred, y_true):
@@ -53,9 +59,9 @@ class Layer:
 
     def forward(self, x):
         self.input = x
-        self.input = min_max_norm(self.input)   # Min-Max Normalization before applying weights
+        self.input = standardize(self.input)   # Do normalization
 
-        self.Z = np.dot(x, self.weights) + self.biases
+        self.Z = np.dot(self.input, self.weights) + self.biases
         self.Y = self.activation(self.Z)
         return self.Y
 
@@ -69,7 +75,7 @@ class Layer:
         else:
             dZ = dY
 
-        dW = np.dot(self.input.T, dZ) / self.input.shape[0]
+        dW = np.dot(self.input.T, dZ) / self.input.shape[0]     # average each weight by sample amount
         dB = np.sum(dZ, axis=0, keepdims=True) / self.input.shape[0]
         dY_prev = np.dot(dZ, self.weights.T)
 
@@ -108,7 +114,7 @@ class Network:
 
 
     def backward(self, y_pred, y_true, learning_rate, momentum):
-        dJ = y_pred - y_true  # Gradients of Output Layer
+        dJ = y_pred - y_true    # Gradients of Output Layer
         for layer in reversed(self.layers):
             dJ = layer.backward(dJ, learning_rate, momentum)
 
