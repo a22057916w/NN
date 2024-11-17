@@ -1,56 +1,36 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mlp import Layer, Network, relu, relu_derivative, softmax
-from util import split_data, one_hot_encoding, plot_feature_scatter
+from mlp import Layer, Network, relu, softmax
+from util import split_data, one_hot_encoding, plot_feature_scatter, plot_training_results
 
 def load_cancer_data(fp):
     with open(fp, 'r') as f:
-        feature_names = f.readline().strip().split(',')[2:]
+        feature_names = f.readline().strip().split(',')[2:]     # record feature names
+    
     data = np.genfromtxt(fp, delimiter=',', dtype=str, skip_header=1)
-    features = data[:, 2:].astype(float)  # Extract all columns except the first (ID) and second one (label) as features
-    diagnosis, labels = np.unique(data[:, 1], return_inverse=True)  # Convert the second column (diagnosis) to labels
-    return features, labels, dict(enumerate(diagnosis)), feature_names
+    features = data[:, 2:].astype(float)  # get features
+    diagnosis, labels = np.unique(data[:, 1], return_inverse=True)  # convert the second column (diagnosis) to labels
+    return features, labels, len(diagnosis), dict(enumerate(diagnosis)), feature_names
 
 
 if __name__ == "__main__":
-    features, labels, diagnosis_to_label, feature_names = load_cancer_data('breast_cancer.csv')
+    features, labels, num_cls, diagnosis_to_label, feature_names = load_cancer_data('data/breast_cancer.csv')
 
-    plot_feature_scatter(features, labels, diagnosis_to_label, feature_names)
+    # plot feature-to-feature figures
+    plot_feature_scatter(features, labels, diagnosis_to_label, feature_names, save_dir="result/breast_cancer/scatter")
 
-    num_classes = len(diagnosis_to_label)
-    labels_one_hot = one_hot_encoding(labels, num_classes)
-    X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, labels_one_hot) 
+    # preprocess data
+    labels_one_hot = one_hot_encoding(labels, num_cls)
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, labels_one_hot, 0.6, 0.2, 0.2)    # train, val, test
 
-
+    # initialize and train the MLP network
     network = Network()
-    network.add_layer(Layer(input_size=features.shape[1], output_size=10, activation=relu, activation_derivative=relu_derivative))
-    network.add_layer(Layer(input_size=10, output_size=10, activation=relu, activation_derivative=relu_derivative))
-    network.add_layer(Layer(input_size=10, output_size=num_classes, activation=softmax))
+    network.add_layer(Layer(input_size=features.shape[1], output_size=10, activation=relu))
+    network.add_layer(Layer(input_size=10, output_size=10, activation=relu))
+    network.add_layer(Layer(input_size=10, output_size=num_cls, activation=softmax))
 
-    network.train(X_train, y_train, X_val, y_val, learning_rate=0.01, epochs=1000, momentum=0.9)
-
-    # Plotting accuracy vs epoch and loss vs epoch
-    epochs = range(1, 1001)
-
-    plt.figure(figsize=(14, 6))
-
-    # Plot accuracy
-    plt.subplot(1, 2, 1)
-    plt.plot(epochs, network.history["train_accuracy"], label="Training Accuracy")
-    plt.plot(epochs, network.history["val_accuracy"], label="Validation Accuracy", linestyle="--")
-    plt.xlabel("Epochs")
-    plt.ylabel("Accuracy")
-    plt.title("Accuracy vs Epoch")
-    plt.legend()
-
-    # Plot loss
-    plt.subplot(1, 2, 2)
-    plt.plot(epochs, network.history["train_loss"], label="Training Loss")
-    plt.plot(epochs, network.history["val_loss"], label="Validation Loss", linestyle="--", color="orange")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.title("Loss vs Epoch")
-    plt.legend()
-
-    plt.tight_layout()
-    plt.show()
+    eps = 1000
+    network.train(X_train, y_train, X_val, y_val, learning_rate=0.01, epochs=eps, momentum=0.9, loss_type="categorical_cross_entropy")
+    
+    # plot accuracy and loss
+    plot_training_results(network.history, eps, save_dir="result/breast_cacner/metric")
