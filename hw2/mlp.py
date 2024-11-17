@@ -1,11 +1,18 @@
 import numpy as np
 
-# 激活函數及其微分
+# Activation Function & Derivatives
 def relu(x):
     return np.maximum(0, x)
 
 def relu_derivative(x):
     return (x > 0).astype(float)
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    s = sigmoid(x)
+    return s * (1 - s)
 
 def softmax(x):
     x = np.nan_to_num(x, nan=0.0, posinf=1e10, neginf=-1e10)  # Clean invalid values from input
@@ -14,23 +21,31 @@ def softmax(x):
     exp_x = np.maximum(exp_x, 1e-10)  # Clip values to avoid overflow or underflow
     return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
-# 損失函數
+
+
+# Loss Function
 def categorical_cross_entropy(y_pred, y_true):
     epsilon = 1e-15  # 避免 log(0) 錯誤
     y_pred = np.maximum(y_pred, epsilon)
     return -np.mean(np.sum(y_true * np.log(y_pred), axis=1))
 
-# Layer 類別，包含動量
+def binary_cross_entropy(y_pred, y_true):
+    epsilon = 1e-15  # 避免 log(0) 錯誤
+    y_pred = np.maximum(y_pred, epsilon)
+    return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+
+
+
 class Layer:
-    def __init__(self, input_size, output_size, activation, activation_derivative=None):
+    def __init__(self, input_size, output_size, activation):
         self.weights = np.random.randn(input_size, output_size) * 0.1  # 隨機初始化權重
         self.biases = np.zeros((1, output_size))  # 初始化偏置為 0
         self.activation = activation
-        self.activation_derivative = activation_derivative
 
         # 初始化動量項
         self.velocity_w = np.zeros_like(self.weights)
         self.velocity_b = np.zeros_like(self.biases)
+
 
     def forward(self, x):
         # 前向傳播
@@ -41,10 +56,13 @@ class Layer:
         self.a = self.activation(self.z)
         return self.a
 
+
     def backward(self, dJ, learning_rate, momentum):
         # 計算梯度
-        if self.activation_derivative:
-            dZ = dJ * self.activation_derivative(self.z)
+        if self.activation == relu:
+            dZ = dJ * relu_derivative(self.z)
+        elif self.activation == sigmoid:
+            dZ = dJ * sigmoid_derivative(self.z)
         else:
             dZ = dJ
 
@@ -61,25 +79,31 @@ class Layer:
         dJ_prev = np.dot(dZ, self.weights.T)
         return dJ_prev
 
+
 # Network 類別
 class Network:
     def __init__(self):
         self.layers = []
         self.history = {"train_accuracy": [], "train_loss": [], "val_accuracy": [], "val_loss": []}
 
+
     def add_layer(self, layer):
-        # 添加層到網路
         self.layers.append(layer)
 
+
     def forward(self, x):
-        # 前向傳播
         for layer in self.layers:
             x = layer.forward(x)
         return x
 
-    def compute_loss(self, y_pred, y_true):
-        # 計算損失
-        return categorical_cross_entropy(y_pred, y_true)
+    def compute_loss(self, y_pred, y_true, loss_type):
+        if loss_type == "categorical_cross_entropy":
+            return categorical_cross_entropy(y_pred, y_true)
+        elif loss_type == "binary_cross_entropy":
+            return binary_cross_entropy(y_pred, y_true)
+        else:
+            raise ValueError("Unsupported loss type")
+
 
     def backward(self, y_pred, y_true, learning_rate, momentum):
         # 反向傳播
@@ -87,18 +111,19 @@ class Network:
         for layer in reversed(self.layers):
             dJ = layer.backward(dJ, learning_rate, momentum)
 
-    def train(self, x, y_true, val_x, val_y, learning_rate=0.05, epochs=100, momentum=0.9):
+
+    def train(self, x, y_true, val_x, val_y, learning_rate=0.05, epochs=100, momentum=0.9, loss_type="categorical_cross_entropy"):
         # 訓練過程
         for epoch in range(epochs):
             # Training pass
             y_pred = self.forward(x)
-            train_loss = self.compute_loss(y_pred, y_true)
+            train_loss = self.compute_loss(y_pred, y_true, loss_type)
             self.backward(y_pred, y_true, learning_rate, momentum)
             train_accuracy = self.evaluate(x, y_true)
 
             # Validation pass
             val_pred = self.forward(val_x)
-            val_loss = self.compute_loss(val_pred, val_y)
+            val_loss = self.compute_loss(val_pred, val_y, loss_type)
             val_accuracy = self.evaluate(val_x, val_y)
 
             # 記錄訓練和驗證數據
