@@ -1,6 +1,5 @@
 
 import numpy as np
-import matplotlib.pyplot as plt
 from mlp import Layer, Network, relu, softmax
 from util import split_data, one_hot_encoding, plot_feature_scatter, plot_training_results
 
