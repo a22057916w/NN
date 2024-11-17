@@ -114,7 +114,7 @@ class Network:
 
 
     def backward(self, y_pred, y_true, learning_rate, momentum):
-        dJ = y_pred - y_true    # Gradients of Output Layer
+        dJ = y_pred - y_true        # Gradients of Output Layer
         for layer in reversed(self.layers):
             dJ = layer.backward(dJ, learning_rate, momentum)
 
