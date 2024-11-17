@@ -27,7 +27,7 @@ if __name__ == "__main__":
     network.add_layer(Layer(input_size=10, output_size=10, activation=relu))
     network.add_layer(Layer(input_size=10, output_size=num_cls, activation=softmax))
 
-    eps = 1000
+    eps = 2000
     network.train(X_train, y_train, X_val, y_val, learning_rate=0.1, epochs=eps, momentum=0.9, loss_type="categorical_cross_entropy")
 
     # plot accuracy and loss
