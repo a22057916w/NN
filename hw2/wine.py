@@ -1,75 +1,34 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mlp import Layer, Network, relu, relu_derivative, softmax
-import numpy as np
+from util import split_data, one_hot_encoding, plot_feature_scatter, plot_training_results
 
 def load_wine_data(file_path):
-    data = np.genfromtxt(file_path, delimiter=',', dtype=str, skip_header=1)
-    print(data)
-    features = data[:, :-1].astype(float)  # Extract all columns except the last one as features
-    qualities, labels = np.unique(data[:, -1], return_inverse=True)  # Convert the last column (quality) to labels
-    return features, labels, dict(enumerate(qualities))
+    data = np.genfromtxt(file_path, delimiter=',', dtype=str)
+    feature_names = data[0, :-1]
+    features = data[1:, :-1].astype(float)  # Extract all columns except the last one as features
+    qualities, labels = np.unique(data[1:, -1], return_inverse=True)  # Convert the last column (quality) to labels
+    return features, labels, len(qualities), dict(enumerate(qualities)), feature_names
 
-def split_data(features, labels, train_ratio=0.6, val_ratio=0.2, test_ratio=0.2):
-    np.random.seed(0)  # for reproducibility
-    indices = np.arange(features.shape[0])
-    np.random.shuffle(indices)
 
-    # Split indices based on the given ratios
-    train_end = int(train_ratio * len(indices))
-    val_end = train_end + int(val_ratio * len(indices))
+if __name__ == "__main__":
+    features, labels, num_cls, quality_to_label, feature_names = load_wine_data('data/winequality-red.csv')
+    
+    # plot feature-to-feature figures
+    plot_feature_scatter(features, labels, quality_to_label, feature_names, save_dir="result/wine/scatter")
 
-    train_indices = indices[:train_end]
-    val_indices = indices[train_end:val_end]
-    test_indices = indices[val_end:]
+    # preprocess data
+    labels_one_hot = one_hot_encoding(labels, num_cls)  
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, labels_one_hot)
 
-    # Index the features and labels
-    return (features[train_indices], labels[train_indices],
-            features[val_indices], labels[val_indices],
-            features[test_indices], labels[test_indices])
+    # Initialize and train the MLP network
+    network = Network()
+    network.add_layer(Layer(input_size=features.shape[1], output_size=10, activation=relu))
+    network.add_layer(Layer(input_size=10, output_size=10, activation=relu))
+    network.add_layer(Layer(input_size=10, output_size=num_cls, activation=softmax))
 
-def one_hot_encode(labels, num_classes):
-    one_hot = np.zeros((labels.size, num_classes))
-    one_hot[np.arange(labels.size), labels] = 1
-    return one_hot
+    eps = 1000
+    network.train(X_train, y_train, X_val, y_val, learning_rate=0.1, epochs=eps, momentum=0.9, loss_type="categorical_cross_entropy")
 
-# Load and preprocess the wine dataset, including splitting it into train, validation, and test sets
-features, labels, quality_to_label = load_wine_data('winequality-red.csv')
-num_classes = len(quality_to_label)
-labels_one_hot = one_hot_encode(labels, num_classes)  # Normalize labels to start from 0
-
-train_features, train_labels, val_features, val_labels, test_features, test_labels = split_data(features, labels_one_hot)
-
-# Initialize and train the MLP network
-network = Network()
-network.add_layer(Layer(input_size=features.shape[1], output_size=10, activation=relu, activation_derivative=relu_derivative))
-network.add_layer(Layer(input_size=10, output_size=10, activation=relu, activation_derivative=relu_derivative))
-network.add_layer(Layer(input_size=10, output_size=num_classes, activation=softmax))
-
-network.train(train_features, train_labels, val_features, val_labels, learning_rate=0.01, epochs=1000, momentum=0.3)
-
-# Plotting accuracy vs epoch and loss vs epoch
-epochs = range(1, 1001)
-
-plt.figure(figsize=(14, 6))
-
-# Plot accuracy
-plt.subplot(1, 2, 1)
-plt.plot(epochs, network.history["train_accuracy"], label="Training Accuracy")
-plt.plot(epochs, network.history["val_accuracy"], label="Validation Accuracy", linestyle="--")
-plt.xlabel("Epochs")
-plt.ylabel("Accuracy")
-plt.title("Accuracy vs Epoch")
-plt.legend()
-
-# Plot loss
-plt.subplot(1, 2, 2)
-plt.plot(epochs, network.history["train_loss"], label="Training Loss")
-plt.plot(epochs, network.history["val_loss"], label="Validation Loss", linestyle="--", color="orange")
-plt.xlabel("Epochs")
-plt.ylabel("Loss")
-plt.title("Loss vs Epoch")
-plt.legend()
-
-plt.tight_layout()
-plt.show()
+    # plot accuracy and loss
+    plot_training_results(network.history, eps, save_dir="result/wine/metric")
