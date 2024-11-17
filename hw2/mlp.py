@@ -22,15 +22,19 @@ def softmax(x):
     return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
 
+# Nomralization
+def min_max_norm(array, epsilon=1e-10):
+    return (array - np.min(array)) / (np.max(array) - np.min(array) + epsilon)
+
 
 # Loss Function
 def categorical_cross_entropy(y_pred, y_true):
-    epsilon = 1e-15  # 避免 log(0) 錯誤
+    epsilon = 1e-15  # avoid log(0) 
     y_pred = np.maximum(y_pred, epsilon)
     return -np.mean(np.sum(y_true * np.log(y_pred), axis=1))
 
 def binary_cross_entropy(y_pred, y_true):
-    epsilon = 1e-15  # 避免 log(0) 錯誤
+    epsilon = 1e-15  # avoid log(0) 
     y_pred = np.maximum(y_pred, epsilon)
     return -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
 
@@ -38,49 +42,47 @@ def binary_cross_entropy(y_pred, y_true):
 
 class Layer:
     def __init__(self, input_size, output_size, activation):
-        self.weights = np.random.randn(input_size, output_size) * 0.1  # 隨機初始化權重
-        self.biases = np.zeros((1, output_size))  # 初始化偏置為 0
+        self.weights = np.random.randn(input_size, output_size) * 0.1  # init randomly
+        self.biases = np.zeros((1, output_size))  # init to 0
         self.activation = activation
 
-        # 初始化動量項
+        # init Momentums
         self.velocity_w = np.zeros_like(self.weights)
         self.velocity_b = np.zeros_like(self.biases)
 
 
     def forward(self, x):
-        # 前向傳播
         self.input = x
-        # Min-Max Normalization before applying weights
-        self.input = (self.input - np.min(self.input)) / (np.max(self.input) - np.min(self.input) + 1e-10)
-        self.z = np.dot(x, self.weights) + self.biases
-        self.a = self.activation(self.z)
-        return self.a
+        self.input = min_max_norm(self.input)   # Min-Max Normalization before applying weights
+
+        self.Z = np.dot(x, self.weights) + self.biases
+        self.Y = self.activation(self.Z)
+        return self.Y
 
 
-    def backward(self, dJ, learning_rate, momentum):
-        # 計算梯度
+    def backward(self, dY, learning_rate, momentum):
+        # Compute gradients
         if self.activation == relu:
-            dZ = dJ * relu_derivative(self.z)
+            dZ = dY * relu_derivative(self.Z)
         elif self.activation == sigmoid:
-            dZ = dJ * sigmoid_derivative(self.z)
+            dZ = dY * sigmoid_derivative(self.Z)
         else:
-            dZ = dJ
+            dZ = dY
 
         dW = np.dot(self.input.T, dZ) / self.input.shape[0]
         dB = np.sum(dZ, axis=0, keepdims=True) / self.input.shape[0]
+        dY_prev = np.dot(dZ, self.weights.T)
 
-        # 使用動量進行更新
+        # Update with "Momentum"
         self.velocity_w = momentum * self.velocity_w - learning_rate * dW
         self.velocity_b = momentum * self.velocity_b - learning_rate * dB
         self.weights += self.velocity_w
         self.biases += self.velocity_b
 
-        # 返回前一層的梯度
-        dJ_prev = np.dot(dZ, self.weights.T)
-        return dJ_prev
+        # return the gradients to the previous layer
+        return dY_prev
 
 
-# Network 類別
 class Network:
     def __init__(self):
         self.layers = []
