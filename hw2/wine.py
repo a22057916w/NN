@@ -32,3 +32,4 @@ if __name__ == "__main__":
 
     # plot accuracy and loss
     plot_training_results(network.history, eps, save_dir="result/wine/metric")
+    print(f"Test Accuracy: {network.evaluate(X_test, y_test)}")
