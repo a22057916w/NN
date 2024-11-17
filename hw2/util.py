@@ -25,8 +25,8 @@ def split_data(features, labels, train_rt=0.6, val_rt=0.2, test_rt=0.2, random_s
             labels[train_indices], labels[val_indices], labels[test_indices])
 
 
-def one_hot_encoding(labels, cls_num):
-    one_hot = np.zeros((len(labels), cls_num))
+def one_hot_encoding(labels, num_cls):
+    one_hot = np.zeros((len(labels), num_cls))
     for i in range(len(labels)):
         one_hot[i, labels[i]] = 1
     return one_hot
@@ -44,7 +44,8 @@ def plot_feature_scatter(features, labels, feature_to_label, feature_names, save
     save_dir (str): Directory to save the plots.
     """
     os.makedirs(save_dir, exist_ok=True)
-
+    print(f"Saving scatter plots to {save_dir}...")
+    
     feature_indices = list(combinations(range(features.shape[1]), 2))  # Get all combinations of two features
     
     count = 1
