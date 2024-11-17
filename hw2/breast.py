@@ -33,5 +33,5 @@ if __name__ == "__main__":
     network.train(X_train, y_train, X_val, y_val, learning_rate=0.01, epochs=eps, momentum=0.3, loss_type="categorical_cross_entropy")
     
     # plot accuracy and loss
-    plot_training_results(network.history, eps, save_dir="result/breast_cacner/metric")
+    plot_training_results(network.history, eps, save_dir="result/breast_cancer/metric")
     print(f"Test Accuracy: {network.evaluate(X_test, y_test)}")
