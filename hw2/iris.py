@@ -1,8 +1,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mlp import Layer, Network, relu, relu_derivative, softmax
-from util import split_data, one_hot_encoding, plot_feature_scatter
+from mlp import Layer, Network, relu, softmax
+from util import split_data, one_hot_encoding, plot_feature_scatter, plot_training_results
 
 def load_iris_data(fp):
     data = np.genfromtxt(fp, delimiter=',', dtype=str)
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     features, labels, num_cls, species_to_label, feature_names = load_iris_data('data/Iris.csv')
 
     # plot feature-to-feature figures
-    plot_feature_scatter(features, labels, species_to_label, feature_names, save_dir="result/iris")
+    plot_feature_scatter(features, labels, species_to_label, feature_names, save_dir="result/iris/scatter")
 
     # preprocess data
     labels_one_hot = one_hot_encoding(labels, num_cls)
@@ -29,34 +29,11 @@ if __name__ == "__main__":
     network.add_layer(Layer(input_size=5, output_size=5, activation=relu))
     network.add_layer(Layer(input_size=5, output_size=num_cls, activation=softmax))
 
+    eps = 1000
+    network.train(X_train, y_train, X_val, y_val, learning_rate=0.01, epochs=eps, momentum=0.9, loss_type="categorical_cross_entropy")
+    
+    # plot accuracy and loss
+    plot_training_results(network.history, eps, save_dir="result/iris/metric")
 
-    # network.train(train_features, train_labels, val_features, val_labels, learning_rate=0.01, epochs=1000)
-    network.train(X_train, y_train, X_val, y_val, learning_rate=0.01, epochs=1000, momentum=0.9, loss_type="categorical_cross_entropy")
 
-
-    # Plotting accuracy vs epoch and loss vs epoch
-    epochs = range(1, 1001)
-
-    plt.figure(figsize=(14, 6))
-
-    # Plot accuracy
-    plt.subplot(1, 2, 1)
-    plt.plot(epochs, network.history["train_accuracy"], label="Training Accuracy")
-    plt.plot(epochs, network.history["val_accuracy"], label="Validation Accuracy", linestyle="--")
-    plt.xlabel("Epochs")
-    plt.ylabel("Accuracy")
-    plt.title("Accuracy vs Epoch")
-    plt.legend()
-
-    # Plot loss
-    plt.subplot(1, 2, 2)
-    plt.plot(epochs, network.history["train_loss"], label="Training Loss")
-    plt.plot(epochs, network.history["val_loss"], label="Validation Loss", linestyle="--", color="orange")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.title("Loss vs Epoch")
-    plt.legend()
-
-    plt.tight_layout()
-    plt.show()
 
