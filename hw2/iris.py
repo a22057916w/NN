@@ -20,10 +20,9 @@ if __name__ == "__main__":
 
     # preprocess data
     labels_one_hot = one_hot_encoding(labels, num_cls)
-    X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, labels_one_hot) 
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, labels_one_hot, 0.6, 0.2, 0.2)    # train, val, test
 
-
-    # Initialize and train the MLP network
+    # initialize and train the MLP network
     network = Network()
     network.add_layer(Layer(input_size=4, output_size=5, activation=relu))
     network.add_layer(Layer(input_size=5, output_size=5, activation=relu))
