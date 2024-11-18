@@ -16,7 +16,7 @@ def sigmoid_derivative(x):
 
 def softmax(x):
     exp_x = np.exp(x)
-    exp_x = np.maximum(exp_x, 1e-10)  # Clip values to avoid overflow or underflow
+    exp_x = np.maximum(exp_x, 1e-10) 
     return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
 
@@ -59,8 +59,8 @@ class Layer:
         self.input = x
         self.input = standardize(self.input)   # Do normalization
 
-        self.Z = np.dot(self.input, self.weights) + self.biases
-        self.Y = self.activation(self.Z)
+        self.Z = np.dot(self.input, self.weights) + self.biases     # Z : potential values
+        self.Y = self.activation(self.Z)                            # Y : activation values
         return self.Y
 
 
