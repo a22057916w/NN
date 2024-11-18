@@ -24,8 +24,9 @@ if __name__ == "__main__":
 
     # initialize and train the MLP network
     network = Network()
-    network.add_layer(Layer(input_size=features.shape[1], output_size=10, activation=relu))
-    network.add_layer(Layer(input_size=10, output_size=10, activation=relu))
+    network.add_layer(Layer(input_size=features.shape[1], output_size=40, activation=relu))
+    network.add_layer(Layer(input_size=40, output_size=20, activation=relu))
+    network.add_layer(Layer(input_size=20, output_size=10, activation=relu))
     network.add_layer(Layer(input_size=10, output_size=num_cls, activation=softmax))
 
     eps = 2000
