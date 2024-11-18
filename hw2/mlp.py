@@ -15,9 +15,7 @@ def sigmoid_derivative(x):
     return s * (1 - s)
 
 def softmax(x):
-    x = np.nan_to_num(x, nan=0.0, posinf=1e10, neginf=-1e10)  # Clean invalid values from input
-    max_x = np.max(x, axis=1, keepdims=True)
-    exp_x = np.exp(x - max_x)
+    exp_x = np.exp(x)
     exp_x = np.maximum(exp_x, 1e-10)  # Clip values to avoid overflow or underflow
     return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
