@@ -27,7 +27,7 @@ if __name__ == "__main__":
     network.add_layer(Layer(input_size=10, output_size=num_cls, activation=softmax))
 
     eps = 2000
-    network.train(X_train, y_train, X_val, y_val, learning_rate=0.1, epochs=eps, momentum=0.9, loss_type="categorical_cross_entropy")
+    network.train(X_train, y_train, X_val, y_val, learning_rate=0.01, epochs=eps, momentum=0.9, loss_type="categorical_cross_entropy")
 
     # plot accuracy and loss
     plot_training_results(network.history, eps, save_dir="result/wine/metric")
