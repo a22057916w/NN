@@ -1,6 +1,5 @@
 
 *.png
-/hw2/data
 *.pyc
 *.txt
 *.csv
