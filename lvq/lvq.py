@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 class LVQ:
     def __init__(self, data, labels):
@@ -54,10 +55,12 @@ class LVQ:
         plt.xlabel('Epoch')
         plt.ylabel('Error')
         plt.title('Convergence Curve')
-        plt.show()
+        plt.savefig(os.path.join("result", "converge_curve.png"))
+        # plt.show()
+        plt.close()
 
     # plot the training/test data by every 2 features with trained winners
-    def plot_result(self, data, labels, features, title):
+    def plot_result(self, data, labels, features, sv_name, title):
         for i in range(len(features)-1):
             # Plot data points by labels
             for label in np.unique(labels):
@@ -73,8 +76,9 @@ class LVQ:
             plt.ylabel(f"{features[i+1]}")
             plt.title(title)
             plt.legend()
-            plt.grid()
-            plt.show()
+            plt.savefig(os.path.join("result", f"{sv_name}_{i}.png"))
+            # plt.show()
+            plt.close()
 
 
 # Helper
@@ -108,9 +112,9 @@ if __name__ == "__main__":
     lvq = LVQ(X, y)
     lvq.train(X, y, epoch=100, learning_rate=0.1)
     lvq.plot_convergence()
-    lvq.plot_result(X, y, features, title="Training Data and Weights")
+    lvq.plot_result(X, y, features, sv_name="train", title="Training Result")
 
     # Predict
     y_pred = lvq.predict(X_test)
-    lvq.plot_result(X_test, y_pred, features, title="Test Data and Weights")
+    lvq.plot_result(X_test, y_pred, features, sv_name="test", title="Test Result")
   
