@@ -61,7 +61,7 @@ class LVQ:
         for i in range(len(features)-1):
             # Plot data points by labels
             for label in np.unique(labels):
-                cls_indices = np.where(np.array(labels) == label)[0]    # e.g. array([0, 1, 2, 3], dtype=int64)[0]
+                cls_indices = np.where(np.array(labels) == label)[0]    # e.g. X([0, 1, 2, 3], dtype=int64)[0]
                 plt.scatter(
                     data[cls_indices, i], data[cls_indices, i+1],
                     label=f"Class {int(label)}",
@@ -82,11 +82,8 @@ def euclidean_distance(a, b):
     return np.sqrt(np.sum((a - b) ** 2))
 
 # Nomralization
-def min_max_norm(array, epsilon=1e-10):
-    return (array - np.min(array)) / (np.max(array) - np.min(array) + epsilon)
-
-def standardize(array, epsilon=1e-10):
-    return (array - np.mean(array)) / (np.std(array) + epsilon)
+def min_max_norm(X, X_min, X_max, epsilon=1e-10):
+    return (X - X_min) / (X_max - X_min + epsilon)
 
 
 if __name__ == "__main__":
@@ -102,8 +99,10 @@ if __name__ == "__main__":
 
     
     # Normalize training and test data
-    X = min_max_norm(X)
-    X_test = min_max_norm(X_test)
+    X_min = np.min(X)
+    X_max = np.max(X)
+    X = min_max_norm(X, X_min, X_max)
+    X_test = min_max_norm(X_test, X_min, X_max)
 
     # Train
     lvq = LVQ(X, y)
