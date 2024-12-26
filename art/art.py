@@ -7,7 +7,7 @@ class Neuron:
         self.status = "enable"  
         self.activation_value = 0  
 
-    def update_weights(self, sample):
+    def update(self, sample):
         self.forward_weight = (self.feedback_weight * sample) / (0.5 + np.dot(self.feedback_weight, sample))
         self.feedback_weight = self.feedback_weight * sample 
         
@@ -19,7 +19,7 @@ class ART:
     def __init__(self, num_features, vigilance):
         self.num_features = num_features
         self.vigilance = vigilance
-        self.neurons = [Neuron(num_features)]  # initialize only one neuron at begining
+        self.neurons = [Neuron(num_features)] * 3  # initialize only one neuron at begining
 
     def calculate_similarity(self, neuron, sample):
         return np.dot(neuron.feedback_weight, sample) / np.sum(sample)
@@ -58,7 +58,7 @@ class ART:
 
                     # Update weights
                     if similarity >= self.vigilance:
-                        winner_neuron.update_weights(sample)
+                        winner_neuron.update(sample)
                         matched = True
                         result["k_final"] = winner_idx
                     else:
@@ -82,7 +82,9 @@ class ART:
         return history
 
 
-def dispaly_output(history):
+def dispaly_output(history, vigilance):
+    print(f"rho: {vigilance}\n")
+
     # Initialize groups and output vector
     size = max(res["k_final"] for res in history) + 1
     cls = [[] for _ in range(size)]
@@ -94,6 +96,7 @@ def dispaly_output(history):
         output_vector[res["k_final"]] = 1
         cls[res["k_final"]].append(idx)
         print(f'input idx: {idx}, k_first: {res["k_first"]}, k_final: {res["k_final"]}, output_vector: {output_vector} ({res["status"]})')
+    print()
 
     # Printing grouping result  
     for idx, c in enumerate(cls):
@@ -105,8 +108,9 @@ if __name__ == "__main__":
     data = np.genfromtxt("data/situations_data.csv", delimiter=",", skip_header=1)
     data = data[:, 1:-1]
 
-    # Run the ART
-    art = ART(num_features=data.shape[1], vigilance=0.7)
+    # Init and run the ART
+    vig = 0.7
+    art = ART(num_features=data.shape[1], vigilance=vig)
     history = art.train(data)
 
-    dispaly_output(history)
+    dispaly_output(history, vig)
