@@ -2,136 +2,111 @@ import numpy as np
 
 class Neuron:
     def __init__(self, num_features):
-        self.forward_weight = np.ones(num_features) / (1 + num_features)  # 權重初始化為 1/(1+n)
-        # print(f"forwrad_weight: {self.forward_weight}")
-        self.feedback_weight = np.ones(num_features)  # 額外權重初始化為 1
-        # print(f"feedback_weight: {self.feedback_weight}")
-        self.status = "enable"  # 神經元狀態初始化為 enable
-        self.activation_value = 0  # 激活值初始化為 0
+        self.forward_weight = np.ones(num_features) / (1 + num_features)  # 1-D vector of 1/(1+n)
+        self.feedback_weight = np.ones(num_features)  # 1-D vector of 1
+        self.status = "enable"  
+        self.activation_value = 0  
 
-    def update_weights(self, sample, winner_idx):
-        self.forward_weight = (self.feedback_weight[winner_idx] * sample[winner_idx]) / (0.5 + np.dot(self.feedback_weight, sample))
-        # print(f"sample: {sample}")
-        # print(f"feedback_weight: {self.feedback_weight}")
+    def update_weights(self, sample):
+        self.forward_weight = (self.feedback_weight * sample) / (0.5 + np.dot(self.feedback_weight, sample))
         self.feedback_weight = self.feedback_weight * sample 
-        # print(f"result: {self.feedback_weight}")
         
-
     def calculate_activation(self, sample):
-        self.activation_value = np.sum(np.dot(self.forward_weight, sample))
+        self.activation_value = np.dot(self.forward_weight, sample)
 
 
 class ART:
-    def __init__(self, num_features, vigilance=0.8):
+    def __init__(self, num_features, vigilance):
         self.num_features = num_features
         self.vigilance = vigilance
-        self.neurons = [Neuron(num_features)]  # 初始化一個神經元
-        self.cls = [[] * len(self.neurons)]
+        self.neurons = [Neuron(num_features)]  # initialize only one neuron at begining
 
     def calculate_similarity(self, neuron, sample):
         return np.dot(neuron.feedback_weight, sample) / np.sum(sample)
 
     def find_winner(self, sample):
-        max_activation = -float('inf')
+        max_activation = -1e9
         winner_idx = None
 
-        # 計算所有神經元的激活值
+        # find winner neurons with max activation value
         for idx, neuron in enumerate(self.neurons):
             neuron.calculate_activation(sample)
-
-        # 找到最大激活值且啟用的神經元
-        for idx, neuron in enumerate(self.neurons):
-            # print(f"neuron.activation_value: {neuron.activation_value}")
             if neuron.status == "enable" and neuron.activation_value > max_activation:
                 max_activation = neuron.activation_value
                 winner_idx = idx
 
+        # return neuron index
         return winner_idx
 
     def train(self, data):
-        """
-        訓練 ART-1 模型
+        history = []    # store the training process
+        for sample in data:
+            # store the result of each sample
+            result = {
+                "status": "Update", "k_first": self.find_winner(sample), "k_final": None
+            }
 
-        :param data: 輸入數據，形狀為 (樣本數, 特徵數)
-        """
-        for idx, sample in enumerate(data):
-            print(f"============== Sample_{idx} ================")
-
-            update_status = "Update"
+            # Begin training
             matched = False
-            k_first = self.find_winner(sample)
-            k_final = None
             while not matched:
                 winner_idx = self.find_winner(sample)
 
-                if winner_idx is None:
-                    # 創建新分類
-                    print("!!! new !!!")
-                    new_neuron = Neuron(self.num_features)
-                    new_neuron.forward_weight = sample.copy()
-                    self.neurons.append(new_neuron)
-                    self.cls.append([])
-                    self.cls[-1].append(idx)
-                    matched = True
-                else:
+                if winner_idx is not None:
                     winner_neuron = self.neurons[winner_idx]
-
-                    # 計算相似度
+                    
                     similarity = self.calculate_similarity(winner_neuron, sample)
-                    print(f"similarty: {similarity}")
 
+                    # Update weights
                     if similarity >= self.vigilance:
-                        # 更新權重
-                        print(f"!!! UPDATE !!!")
-                        winner_neuron.update_weights(sample, winner_idx)
+                        winner_neuron.update_weights(sample)
                         matched = True
-                        k_final = winner_idx
-                        self.cls[winner_idx].append(idx)
+                        result["k_final"] = winner_idx
                     else:
-                        # 禁用該神經元
+                        # disable the failed candidate
                         winner_neuron.status = "disable"
-            print(f"len(neuron): {len(self.neurons)}")
-            # 重置所有神經元狀態為 enable
+                else:
+                    new_neuron = Neuron(self.num_features)
+                    new_neuron.feedback_weight = sample.copy()
+                    self.neurons.append(new_neuron)
+
+                    result["k_final"] = len(self.neurons) -1
+                    result["status"] = "Add"
+                    matched = True
+                    
+            history.append(result)
+
+            # Reset all neuron as enable
             for neuron in self.neurons:
                 neuron.status = "enable"
 
-            print(f"input idx: {idx}, k_first: {k_first}, k_final: {k_final}")
-            
-        for idx, cls in enumerate(self.cls):
-            print(f"class {idx}: {cls}")
+        return history
 
-    def predict(self, sample):
-        """
-        預測輸入樣本的分類
 
-        :param sample: 輸入樣本，形狀為 (特徵數, )
-        :return: 分類索引（若無匹配則返回 "New Category"）
-        """
-        if sample.shape[0] != self.num_features:
-            raise ValueError("Sample feature size does not match the number of model features.")
+def dispaly_output(history):
+    # Initialize groups and output vector
+    size = max(res["k_final"] for res in history) + 1
+    cls = [[] for _ in range(size)]
+    output_vector = []
 
-        winner_idx = self.find_winner(sample)
+    # Printing sample status
+    for idx, res in enumerate(history):
+        output_vector = [0] * max(len(output_vector), res["k_final"] + 1)
+        output_vector[res["k_final"]] = 1
+        cls[res["k_final"]].append(idx)
+        print(f'input idx: {idx}, k_first: {res["k_first"]}, k_final: {res["k_final"]}, output_vector: {output_vector} ({res["status"]})')
 
-        return winner_idx if winner_idx is not None else "New Category"
+    # Printing grouping result  
+    for idx, c in enumerate(cls):
+        print(f"class {idx}: {c}")
 
 
 if __name__ == "__main__":
-    # 初始化數據
+    # Load data
     data = np.genfromtxt("data/situations_data.csv", delimiter=",", skip_header=1)
     data = data[:, 1:-1]
 
-    # 初始化 ART-1 模型
-    art = ART(num_features=data.shape[1], vigilance=0.6)
+    # Run the ART
+    art = ART(num_features=data.shape[1], vigilance=0.7)
+    history = art.train(data)
 
-    # 訓練模型
-    art.train(data)
-
-    # 打印分類結果
-    # print("Weights after training:")
-    # for i, neuron in enumerate(art.neurons):
-    #     print(f"Category {i}: {neuron.forward_weight}, Feedback Weight: {neuron.feedback_weight}, Activation Value: {neuron.activation_value}, Status: {neuron.status}")
-
-    # # 測試新樣本
-    # test_sample = np.array([1, 0, 1, 0, 1])
-    # category = art.predict(test_sample)
-    # print(f"Test sample belongs to category: {category}")
+    dispaly_output(history)
